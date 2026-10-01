@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Mon espace de partage</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    nav button {
+      margin-left: 6px;
+      padding: 9px 13px;
+      border: none;
+      border-radius: 8px;
+      background: #eee;
+      cursor: pointer;
+    }
+
+    nav button:hover {
+      background: #ddd;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button.primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+
+    .file-input {
+      margin: 12px 0;
+    }
+
+    .publication {
+      border-top: 1px solid #eee;
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+
+    .publication img,
+    .publication video {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .publication audio {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .author {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .date {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .member {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .member:last-child {
+      border-bottom: none;
+    }
+
+    .error {
+      color: #dc2626;
+      margin-top: 10px;
+    }
+
+    .success {
+      color: #16a34a;
+      margin-top: 10px;
+    }
+
+    .logout {
+      background: #fee2e2 !important;
+      color: #b91c1c;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌐 Mon espace</h1>
+
+  <nav>
+    <button onclick="showPage('home')">Accueil</button>
+    <button onclick="showPage('publish')">➕ Publier</button>
+    <button onclick="showPage('members')">👥 Membres</button>
+    <button class="logout" onclick="logout()">Déconnexion</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- CONNEXION -->
+  <section id="login" class="page active">
+
+    <div class="card">
+
+      <h2>🔐 Connexion</h2>
+
+      <input
+        type="email"
+        id="loginEmail"
+        placeholder="Adresse e-mail"
+      >
+
+      <input
+        type="password"
+        id="loginPassword"
+        placeholder="Mot de passe"
+      >
+
+      <button class="primary" onclick="login()">
+        Se connecter
+      </button>
+
+      <p>
+        Pas encore de compte ?
+        <button onclick="showPage('register')">
+          Créer un compte
+        </button>
+      </p>
+
+      <p id="loginMessage"></p>
+
+    </div>
+
+  </section>
+
+
+  <!-- INSCRIPTION -->
+  <section id="register" class="page">
+
+    <div class="card">
+
+      <h2>👤 Créer un compte</h2>
+
+      <input
+        type="text"
+        id="registerName"
+        placeholder="Prénom et nom"
+      >
+
+      <input
+        type="email"
+        id="registerEmail"
+        placeholder="Adresse e-mail"
+      >
+
+      <input
+        type="password"
+        id="registerPassword"
+        placeholder="Mot de passe"
+      >
+
+      <button class="primary" onclick="register()">
+        Créer mon compte
+      </button>
+
+      <p>
+        Déjà un compte ?
+        <button onclick="showPage('login')">
+          Se connecter
+        </button>
+      </p>
+
+      <p id="registerMessage"></p>
+
+    </div>
+
+  </section>
+
+
+  <!-- ACCUEIL -->
+  <section id="home" class="page">
+
+    <div class="card">
+
+      <h2>🏠 Publications</h2>
+
+      <p>
+        Voici les dernières publications des membres.
+      </p>
+
+      <div id="publications">
+        <p>Aucune publication pour le moment.</p>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- PUBLICATION -->
+  <section id="publish" class="page">
+
+    <div class="card">
+
+      <h2>➕ Créer une publication</h2>
+
+      <textarea
+        id="postText"
+        placeholder="Écris quelque chose..."
+      ></textarea>
+
+      <div class="file-input">
+        <label>
+          🖼️ Ajouter une image
+        </label>
+        <input
+          type="file"
+          id="imageFile"
+          accept="image/*"
+        >
+      </div>
+
+      <div class="file-input">
+        <label>
+          🎥 Ajouter une vidéo
+        </label>
+        <input
+          type="file"
+          id="videoFile"
+          accept="video/*"
+        >
+      </div>
+
+      <div class="file-input">
+        <label>
+          🎤 Ajouter un vocal
+        </label>
+        <input
+          type="file"
+          id="audioFile"
+          accept="audio/*"
+        >
+      </div>
+
+      <button class="primary" onclick="publishPost()">
+        🚀 Publier
+      </button>
+
+      <p id="publishMessage"></p>
+
+    </div>
+
+  </section>
+
+
+  <!-- MEMBRES -->
+  <section id="members" class="page">
+
+    <div class="card">
+
+      <h2>👥 Membres</h2>
+
+      <div id="membersList"></div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<script>
+
+  /*
+    --------------------------------------------------
+    DONNÉES TEMPORAIRES
+    --------------------------------------------------
+
+    Pour le moment les données sont stockées
+    dans le navigateur.
+
+    Plus tard nous remplacerons cette partie
+    par Supabase.
+  */
+
+  let users = JSON.parse(
+    localStorage.getItem("users") || "[]"
+  );
+
+  let posts = JSON.parse(
+    localStorage.getItem("posts") || "[]"
+  );
+
+  let currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+  );
+
+
+  /*
+    --------------------------------------------------
+    NAVIGATION
+    --------------------------------------------------
+  */
+
+  function showPage(pageName) {
+
+    document.querySelectorAll(".page").forEach(page => {
+      page.classList.remove("active");
+    });
+
+    document
+      .getElementById(pageName)
+      .classList.add("active");
+
+    if (pageName === "home") {
+      displayPosts();
+    }
+
+    if (pageName === "members") {
+      displayMembers();
+    }
+  }
+
+
+  /*
+    --------------------------------------------------
+    INSCRIPTION
+    --------------------------------------------------
+  */
+
+  function register() {
+
+    const name =
+      document.getElementById("registerName").value.trim();
+
+    const email =
+      document.getElementById("registerEmail").value.trim();
+
+    const password =
+      document.getElementById("registerPassword").value;
+
+    const message =
+      document.getElementById("registerMessage");
+
+
+    if (!name || !email || !password) {
+
+      message.textContent =
+        "Veuillez remplir tous les champs.";
+
+      message.className = "error";
+
+      return;
+    }
+
+
+    const existingUser =
+      users.find(user => user.email === email);
+
+
+    if (existingUser) {
+
+      message.textContent =
+        "Cette adresse e-mail est déjà utilisée.";
+
+      message.className = "error";
+
+      return;
+    }
+
+
+    const newUser = {
+
+      id: Date.now(),
+
+      name: name,
+
+      email: email,
+
+      password: password
+
+    };
+
+
+    users.push(newUser);
+
+    localStorage.setItem(
+      "users",
+      JSON.stringify(users)
+    );
+
+
+    message.textContent =
+      "Compte créé ! Tu peux maintenant te connecter.";
+
+    message.className = "success";
+
+
+    document.getElementById("registerName").value = "";
+    document.getElementById("registerEmail").value = "";
+    document.getElementById("registerPassword").value = "";
+  }
+
+
+  /*
+    --------------------------------------------------
+    CONNEXION
+    --------------------------------------------------
+  */
+
+  function login() {
+
+    const email =
+      document.getElementById("loginEmail").value.trim();
+
+    const password =
+      document.getElementById("loginPassword").value;
+
+    const message =
+      document.getElementById("loginMessage");
+
+
+    const user = users.find(
+      user =>
+        user.email === email &&
+        user.password === password
+    );
+
+
+    if (!user) {
+
+      message.textContent =
+        "E-mail ou mot de passe incorrect.";
+
+      message.className = "error";
+
+      return;
+    }
+
+
+    currentUser = user;
+
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify(user)
+    );
+
+
+    message.textContent =
+      "Connexion réussie !";
+
+    message.className = "success";
+
+
+    showPage("home");
+  }
+
+
+  /*
+    --------------------------------------------------
+    DÉCONNEXION
+    --------------------------------------------------
+  */
+
+  function logout() {
+
+    currentUser = null;
+
+    localStorage.removeItem("currentUser");
+
+    showPage("login");
+  }
+
+
+  /*
+    --------------------------------------------------
+    PUBLICATION
+    --------------------------------------------------
+  */
+
+  function publishPost() {
+
+    if (!currentUser) {
+
+      alert(
+        "Tu dois être connecté pour publier."
+      );
+
+      showPage("login");
+
+      return;
+    }
+
+
+    const text =
+      document.getElementById("postText").value.trim();
+
+    const imageFile =
+      document.getElementById("imageFile").files[0];
+
+    const videoFile =
+      document.getElementById("videoFile").files[0];
+
+    const audioFile =
+      document.getElementById("audioFile").files[0];
+
+
+    if (
+      !text &&
+      !imageFile &&
+      !videoFile &&
+      !audioFile
+    ) {
+
+      alert(
+        "Ajoute au moins un élément à ta publication."
+      );
+
+      return;
+    }
+
+
+    /*
+      Pour cette première version,
+      les fichiers sont transformés en URL temporaire.
+    */
+
+    const post = {
+
+      id: Date.now(),
+
+      author:
+        currentUser.name,
+
+      text:
+        text,
+
+      image:
+        imageFile
+          ? URL.createObjectURL(imageFile)
+          : null,
+
+      video:
+        videoFile
+          ? URL.createObjectURL(videoFile)
+          : null,
+
+      audio:
+        audioFile
+          ? URL.createObjectURL(audioFile)
+          : null,
+
+      date:
+        new Date().toLocaleString("fr-FR")
+
+    };
+
+
+    posts.unshift(post);
+
+
+    /*
+      On sauvegarde les publications texte.
+      Les fichiers seront réellement sauvegardés
+      dans Supabase dans la prochaine étape.
+    */
+
+    localStorage.setItem(
+      "posts",
+      JSON.stringify(posts)
+    );
+
+
+    document.getElementById("postText").value = "";
+
+    document.getElementById("imageFile").value = "";
+
+    document.getElementById("videoFile").value = "";
+
+    document.getElementById("audioFile").value = "";
+
+
+    document.getElementById("publishMessage").textContent =
+      "Publication créée !";
+
+    document.getElementById("publishMessage").className =
+      "success";
+
+
+    setTimeout(() => {
+
+      document.getElementById("publishMessage").textContent = "";
+
+      showPage("home");
+
+    }, 1000);
+  }
+
+
+  /*
+    --------------------------------------------------
+    AFFICHER LES PUBLICATIONS
+    --------------------------------------------------
+  */
+
+  function displayPosts() {
+
+    const container =
+      document.getElementById("publications");
+
+
+    if (posts.length === 0) {
+
+      container.innerHTML =
+        "<p>Aucune publication pour le moment.</p>";
+
+      return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    posts.forEach(post => {
+
+      const article =
+        document.createElement("article");
+
+      article.className =
+        "publication";
+
+
+      let html = `
+
+        <div class="author">
+          👤 ${escapeHtml(post.author)}
+        </div>
+
+        <div class="date">
+          ${post.date}
+        </div>
+
+      `;
+
+
+      if (post.text) {
+
+        html += `
+          <p>
+            ${escapeHtml(post.text)}
+          </p>
+        `;
+      }
+
+
+      if (post.image) {
+
+        html += `
+          <img
+            src="${post.image}"
+            alt="Image publiée"
+          >
+        `;
+      }
+
+
+      if (post.video) {
+
+        html += `
+          <video
+            src="${post.video}"
+            controls
+          ></video>
+        `;
+      }
+
+
+      if (post.audio) {
+
+        html += `
+          <audio
+            src="${post.audio}"
+            controls
+          ></audio>
+        `;
+      }
+
+
+      article.innerHTML = html;
+
+      container.appendChild(article);
+
+    });
+  }
+
+
+  /*
+    --------------------------------------------------
+    AFFICHER LES MEMBRES
+    --------------------------------------------------
+  */
+
+  function displayMembers() {
+
+    const container =
+      document.getElementById("membersList");
+
+
+    if (users.length === 0) {
+
+      container.innerHTML =
+        "<p>Aucun membre pour le moment.</p>";
+
+      return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    users.forEach(user => {
+
+      const member =
+        document.createElement("div");
+
+      member.className =
+        "member";
+
+
+      member.innerHTML = `
+        👤 ${escapeHtml(user.name)}
+      `;
+
+
+      container.appendChild(member);
+
+    });
+  }
+
+
+  /*
+    --------------------------------------------------
+    SÉCURITÉ POUR L'AFFICHAGE DU TEXTE
+    --------------------------------------------------
+  */
+
+  function escapeHtml(text) {
+
+    const div =
+      document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+  }
+
+
+  /*
+    --------------------------------------------------
+    AU DÉMARRAGE
+    --------------------------------------------------
+  */
+
+  if (currentUser) {
+
+    showPage("home");
+
+  } else {
+
+    showPage("login");
+
+  }
+
+</script>
+
+</body>
+  </html>
