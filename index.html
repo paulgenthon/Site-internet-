@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mon espace de partage</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  color: #222;
+}
+
+header {
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+nav button {
+  padding: 9px 13px;
+  border: none;
+  border-radius: 8px;
+  background: #eee;
+  cursor: pointer;
+}
+
+main {
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 0 15px;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+h2 {
+  margin-top: 0;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button.primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.publication {
+  border-top: 1px solid #eee;
+  padding-top: 18px;
+  margin-top: 18px;
+}
+
+.author {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.date {
+  color: #888;
+  font-size: 13px;
+}
+
+.member {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.error {
+  color: #dc2626;
+}
+
+.success {
+  color: #16a34a;
+}
+
+.logout {
+  background: #fee2e2 !important;
+  color: #b91c1c;
+}
+
+#userInfo {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>🌐 Mon espace</h1>
+
+<nav>
+<button onclick="showPage('home')">Accueil</button>
+<button onclick="showPage('publish')">➕ Publier</button>
+<button onclick="showPage('members')">👥 Membres</button>
+<button class="logout" onclick="logout()">Déconnexion</button>
+</nav>
+
+</header>
+
+
+<main>
+
+
+<!-- CONNEXION -->
+
+<section id="login" class="page active">
+
+<div class="card">
+
+<h2>🔐 Connexion</h2>
+
+<input
+type="email"
+id="loginEmail"
+placeholder="Adresse e-mail"
+>
+
+<input
+type="password"
+id="loginPassword"
+placeholder="Mot de passe"
+>
+
+<button class="primary" onclick="login()">
+Se connecter
+</button>
+
+<p>
+Pas encore de compte ?
+<button onclick="showPage('register')">
+Créer un compte
+</button>
+</p>
+
+<p id="loginMessage"></p>
+
+</div>
+
+</section>
+
+
+<!-- INSCRIPTION -->
+
+<section id="register" class="page">
+
+<div class="card">
+
+<h2>👤 Créer un compte</h2>
+
+<input
+type="text"
+id="registerName"
+placeholder="Prénom et nom"
+>
+
+<input
+type="email"
+id="registerEmail"
+placeholder="Adresse e-mail"
+>
+
+<input
+type="password"
+id="registerPassword"
+placeholder="Mot de passe"
+>
+
+<button class="primary" onclick="register()">
+Créer mon compte
+</button>
+
+<p>
+Déjà un compte ?
+<button onclick="showPage('login')">
+Se connecter
+</button>
+</p>
+
+<p id="registerMessage"></p>
+
+</div>
+
+</section>
+
+
+<!-- ACCUEIL -->
+
+<section id="home" class="page">
+
+<div class="card">
+
+<h2>🏠 Publications</h2>
+
+<div id="userInfo"></div>
+
+<button class="primary" onclick="loadPosts()">
+🔄 Actualiser
+</button>
+
+<div id="publications">
+<p>Chargement...</p>
+</div>
+
+</div>
+
+</section>
+
+
+<!-- PUBLICATION -->
+
+<section id="publish" class="page">
+
+<div class="card">
+
+<h2>➕ Créer une publication</h2>
+
+<textarea
+id="postText"
+placeholder="Écris quelque chose..."
+></textarea>
+
+<button class="primary" onclick="publishPost()">
+🚀 Publier
+</button>
+
+<p id="publishMessage"></p>
+
+</div>
+
+</section>
+
+
+<!-- MEMBRES -->
+
+<section id="members" class="page">
+
+<div class="card">
+
+<h2>👥 Membres</h2>
+
+<div id="membersList">
+<p>Chargement...</p>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE
+   ===================================================== */
+
+/*
+   IMPORTANT :
+
+   REMPLACE UNIQUEMENT les deux valeurs ci-dessous.
+
+   1. TON_URL_SUPABASE
+   2. TA_CLE_ANON_SUPABASE
+
+   Ne mets PAS une clé service_role ici.
+*/
+
+const SUPABASE_URL = "TON_URL_SUPABASE";
+
+const SUPABASE_ANON_KEY = "TA_CLE_ANON_SUPABASE";
+
+
+const supabaseClient =
+window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_ANON_KEY
+);
+
+
+let currentUser = null;
+
+
+/* =====================================================
+   NAVIGATION
+   ===================================================== */
+
+function showPage(pageName) {
+
+document.querySelectorAll(".page").forEach(page => {
+page.classList.remove("active");
+});
+
+const page =
+document.getElementById(pageName);
+
+if (page) {
+page.classList.add("active");
+}
+
+if (pageName === "home") {
+loadPosts();
+}
+
+if (pageName === "members") {
+loadMembers();
+}
+
+}
+
+
+/* =====================================================
+   INSCRIPTION
+   ===================================================== */
+
+async function register() {
+
+const name =
+document.getElementById("registerName")
+.value
+.trim();
+
+const email =
+document.getElementById("registerEmail")
+.value
+.trim();
+
+const password =
+document.getElementById("registerPassword")
+.value;
+
+const message =
+document.getElementById("registerMessage");
+
+
+if (!name || !email || !password) {
+
+message.textContent =
+"Veuillez remplir tous les champs.";
+
+message.className = "error";
+
+return;
+}
+
+
+if (password.length < 6) {
+
+message.textContent =
+"Le mot de passe doit contenir au moins 6 caractères.";
+
+message.className = "error";
+
+return;
+}
+
+
+message.textContent =
+"Création du compte...";
+
+
+const {
+data,
+error
+} =
+await supabaseClient.auth.signUp({
+
+email: email,
+
+password: password,
+
+options: {
+
+data: {
+name: name
+}
+
+}
+
+});
+
+
+if (error) {
+
+message.textContent =
+"Erreur : " + error.message;
+
+message.className = "error";
+
+return;
+}
+
+
+message.textContent =
+"Compte créé ! Tu peux maintenant te connecter.";
+
+message.className = "success";
+
+
+document.getElementById("registerName").value = "";
+document.getElementById("registerEmail").value = "";
+document.getElementById("registerPassword").value = "";
+
+}
+
+
+/* =====================================================
+   CONNEXION
+   ===================================================== */
+
+async function login() {
+
+const email =
+document.getElementById("loginEmail")
+.value
+.trim();
+
+const password =
+document.getElementById("loginPassword")
+.value;
+
+const message =
+document.getElementById("loginMessage");
+
+
+message.textContent =
+"Connexion...";
+
+
+const {
+data,
+error
+} =
+await supabaseClient.auth.signInWithPassword({
+
+email: email,
+
+password: password
+
+});
+
+
+if (error) {
+
+message.textContent =
+"E-mail ou mot de passe incorrect.";
+
+message.className = "error";
+
+return;
+}
+
+
+currentUser =
+data.user;
+
+
+await loadCurrentProfile();
+
+
+message.textContent =
+"Connexion réussie !";
+
+message.className = "success";
+
+
+showPage("home");
+
+}
+
+
+/* =====================================================
+   DÉCONNEXION
+   ===================================================== */
+
+async function logout() {
+
+await supabaseClient.auth.signOut();
+
+currentUser = null;
+
+showPage("login");
+
+}
+
+
+/* =====================================================
+   PROFIL
+   ===================================================== */
+
+async function loadCurrentProfile() {
+
+if (!currentUser) {
+return;
+}
+
+
+const {
+data,
+error
+} =
+await supabaseClient
+.from("profiles")
+.select("name")
+.eq("id", currentUser.id)
+.single();
+
+
+const userInfo =
+document.getElementById("userInfo");
+
+
+if (!error && data) {
+
+currentUser.profileName =
+data.name;
+
+userInfo.textContent =
+"Connecté en tant que " +
+data.name;
+
+}
+
+}
+
+
+/* =====================================================
+   PUBLIER
+   ===================================================== */
+
+async function publishPost() {
+
+if (!currentUser) {
+
+alert(
+"Tu dois être connecté pour publier."
+);
+
+showPage("login");
+
+return;
+}
+
+
+const text =
+document.getElementById("postText")
+.value
+.trim();
+
+
+if (!text) {
+
+alert(
+"Écris quelque chose avant de publier."
+);
+
+return;
+}
+
+
+const message =
+document.getElementById("publishMessage");
+
+
+message.textContent =
+"Publication en cours...";
+
+
+const {
+error
+} =
+await supabaseClient
+.from("posts")
+.insert({
+
+user_id:
+currentUser.id,
+
+text:
+text
+
+});
+
+
+if (error) {
+
+console.error(error);
+
+message.textContent =
+"Erreur : " + error.message;
+
+message.className =
+"error";
+
+return;
+}
+
+
+document.getElementById("postText").value = "";
+
+
+message.textContent =
+"Publication créée !";
+
+message.className =
+"success";
+
+
+setTimeout(() => {
+
+message.textContent = "";
+
+showPage("home");
+
+}, 800);
+
+}
+
+
+/* =====================================================
+   PUBLICATIONS
+   ===================================================== */
+
+async function loadPosts() {
+
+const container =
+document.getElementById("publications");
+
+
+container.innerHTML =
+"<p>Chargement des publications...</p>";
+
+
+const {
+data,
+error
+} =
+await supabaseClient
+.from("posts")
+.select(`
+id,
+text,
+created_at,
+profiles (
+name
+)
+`)
+.order(
+"created_at",
+{
+ascending: false
+}
+);
+
+
+if (error) {
+
+console.error(error);
+
+container.innerHTML =
+"<p class='error'>Impossible de charger les publications.</p>";
+
+return;
+}
+
+
+if (!data || data.length === 0) {
+
+container.innerHTML =
+"<p>Aucune publication pour le moment.</p>";
+
+return;
+}
+
+
+container.innerHTML = "";
+
+
+data.forEach(post => {
+
+const article =
+document.createElement("article");
+
+article.className =
+"publication";
+
+
+const author =
+post.profiles
+? post.profiles.name
+: "Membre";
+
+
+const date =
+new Date(post.created_at)
+.toLocaleString("fr-FR");
+
+
+article.innerHTML = `
+
+<div class="author">
+👤 ${escapeHtml(author)}
+</div>
+
+<div class="date">
+${escapeHtml(date)}
+</div>
+
+<p>
+${escapeHtml(post.text)}
+</p>
+
+`;
+
+
+container.appendChild(article);
+
+});
+
+}
+
+
+/* =====================================================
+   MEMBRES
+   ===================================================== */
+
+async function loadMembers() {
+
+const container =
+document.getElementById("membersList");
+
+
+container.innerHTML =
+"<p>Chargement...</p>";
+
+
+const {
+data,
+error
+} =
+await supabaseClient
+.from("profiles")
+.select("name")
+.order(
+"name",
+{
+ascending: true
+}
+);
+
+
+if (error) {
+
+console.error(error);
+
+container.innerHTML =
+"<p class='error'>Impossible de charger les membres.</p>";
+
+return;
+}
+
+
+if (!data || data.length === 0) {
+
+container.innerHTML =
+"<p>Aucun membre.</p>";
+
+return;
+}
+
+
+container.innerHTML = "";
+
+
+data.forEach(user => {
+
+const member =
+document.createElement("div");
+
+member.className =
+"member";
+
+
+member.innerHTML =
+"👤 " +
+escapeHtml(user.name);
+
+
+container.appendChild(member);
+
+});
+
+}
+
+
+/* =====================================================
+   SÉCURITÉ
+   ===================================================== */
+
+function escapeHtml(text) {
+
+const div =
+document.createElement("div");
+
+div.textContent =
+text ?? "";
+
+return div.innerHTML;
+
+}
+
+
+/* =====================================================
+   VÉRIFICATION DE LA CONNEXION
+   ===================================================== */
+
+async function checkUser() {
+
+const {
+data
+} =
+await supabaseClient.auth.getUser();
+
+
+if (data && data.user) {
+
+currentUser =
+data.user;
+
+await loadCurrentProfile();
+
+showPage("home");
+
+} else {
+
+currentUser =
+null;
+
+showPage("login");
+
+}
+
+}
+
+
+/* =====================================================
+   DÉMARRAGE
+   ===================================================== */
+
+checkUser();
+
+</script>
+
+</body>
+  </html>
